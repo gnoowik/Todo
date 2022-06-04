@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+	
+	<script>
+		var items = []
+		var currentItem = null
+
+		// Elements
+		var detailsForm = null
+		var detailsTitle = null
+		var detailsDesc = null
+		var detailsState = null
+		var detailsDelete = null
+		var listViews = []
+
+		function init() {
+			detailsForm = document.getElementById("details")
+			detailsForm.style.display = "none"
+
+			detailsTitle = document.getElementById("details_title")
+			detailsDesc = document.getElementById("details_desc")
+			detailsState = document.getElementById("details_state")
+			detailsDelete = document.getElementById("details_delete")
+
+			listViews[0] = document.getElementById("list_todo")
+			listViews[1] = document.getElementById("list_progress")
+			listViews[2] = document.getElementById("list_done")
+
+			var val = localStorage.getItem("items")
+			items = JSON.parse(val)
+
+			if (items == null)
+				items = []
+
+			refreshDetailView()
+			refreshListViews()
+		}
+
+		function refreshDetailView() {
+
+			if (currentItem == null) {
+				detailsForm.style.display = "none"
+				return
+			}
+
+			detailsForm.style.display = "block"
+
+			if (currentItem.id == -1) {
+				detailsState.style.display = "none"
+				detailsDelete.style.display = "none"
+			}
+			else {
+				detailsState.style.display = "block"
+				detailsDelete.style.display = "inline"
+			}
+
+			detailsTitle.value = currentItem.title
+			detailsDesc.value = currentItem.desc
+			detailsState.value = currentItem.state
+		}
+
+		function refreshListViews() {
+
+			for (let i = 0; i < listViews.length; i++) {
+				listViews[i].innerHTML = "";				
+			}
+
+			for (let i = 0; i < items.length; i++) {
+				if (items[i] == null) continue
+
+				let state = items[i].state
+
+				let li = document.createElement("li")
+				li.appendChild(document.createTextNode(items[i].title))
+				li.setAttribute("onclick", `onClickItem(${i})`)
+
+				listViews[state].appendChild(li)
+				//console.log(listViews[i])
+			}
+		}
+
+		function onClickAdd() {
+
+			if (currentItem != null) {
+				if (!confirm("수정 중인 아이템이 있음. 그래도 진행할래?")) {
+					return;
+				}
+			}
+
+			currentItem =  {
+					id : -1,
+					title : "",
+					desc : "",
+					state : 0
+			}
+
+			refreshDetailView()
+		}
+
+		function onClickConfirm() {
+
+			let msg = currentItem.id == -1 ? "진짜 추가할래?" : "진짜 수정할래?"
+			
+			if (!confirm(msg))
+				return
+
+			if (currentItem.id == -1) {
+				currentItem.id = items.length
+				items[currentItem.id] = currentItem
+			}
+
+			currentItem.title = detailsTitle.value
+			currentItem.desc = detailsDesc.value
+			currentItem.state = detailsState.value
+
+			var val = JSON.stringify(items)
+			localStorage.setItem("items", JSON.stringify(items))
+
+			currentItem = null
+
+			refreshListViews()
+			refreshDetailView()
+		}
+
+		function onClickCancel() {
+			
+			if (!confirm("수정 중인데 정말 취소할꺼니?")) {
+				return;
+			}
+
+			currentItem = null
+			refreshDetailView()
+		}
+
+		function onClickItem(id) {
+			if (currentItem != null) {
+				if (!confirm("수정 중인 아이템이 있음. 그래도 진행할래?")) {
+					return;
+				}
+			}
+
+			currentItem = items[id]
+			refreshDetailView()
+		}
+
+		function onClickDelete() {
+
+			if (!confirm("정말 삭제할래?")) {
+				return;
+			}
+
+			items[currentItem.id] = null
+			localStorage.setItem("items", JSON.stringify(items))
+
+			currentItem = null
+
+			refreshDetailView()
+			refreshListViews()
+		}
+
+	</script>
+
+<head>
+
+</head>
+<body onload="init()">
+	<button onclick="onClickAdd()">Add</button>
+	<form id="details">
+		<h4>DETAILS</h4>
+		<select id="details_state">
+			<option value="0">Todo</option>
+			<option value="1">Progress</option>
+			<option value="2">Done</option>
+		</select>
+
+  		<label for="details_title">Title</label><br>
+  		<input type="text" id="details_title"><br>
+  		<label for="details_desc">Description</label><br>
+  		<input type="text" id="details_desc"><br>
+  		<input type="button" onclick="onClickConfirm()" value="Confirm">
+  		<input type="button" onclick="onClickDelete();" id="details_delete" value="Delete">
+  		<input type="button" onclick="onClickCancel()" value="Cancel">
+	</form>
+
+	<h4>TODO</h4>
+	<ul id="list_todo">
+	</ul>
+
+	<h4>PROGRESS</h4>
+	<ul id="list_progress">
+	</ul>
+
+	<h4>DONE</h4>
+	<ul id="list_done">
+	</ul>
+
+</body>
+</html>
